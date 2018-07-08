@@ -41,7 +41,7 @@ build-lambda:
 
 .PHONY: copy-configs
 copy-configs:
-	test -n "${CONFIGS}" && cp -r ${CONFIGS} dist/lambda/
+	@test -n "${CONFIGS}" && cp -r ${CONFIGS} dist/lambda/
 
 .PHONY: bundle-lambda
 bundle-lambda:
