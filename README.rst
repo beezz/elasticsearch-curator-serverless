@@ -18,9 +18,17 @@ approach / code has shortcomings which this handler tries to address:
 Thanks to this `PR <https://github.com/elastic/curator/pull/1035>`_ it's also possible to implement such a handler in clean and easy way.
 
 
+Requirements
+============
+
+* Python 3.6
+
+
 How to create deployment package
 ================================
 
+From source
+-----------
 
 Clone this repository and change directory to it
 
