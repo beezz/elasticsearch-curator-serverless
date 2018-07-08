@@ -30,5 +30,5 @@ setup(
         "Programming Language :: Python :: 3.6",
     ],
     packages=find_packages(exclude=['tests']),
-    install_requires=['elasticsearch-curator', 'requests'],
+    install_requires=['elasticsearch-curator>=5.2', 'requests'],
 )
