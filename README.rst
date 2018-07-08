@@ -39,7 +39,6 @@ Clone this repository and change directory to it
 
 Generate deployment zip package
 
-
 .. code-block:: bah
 
    $ make lambda
@@ -54,3 +53,63 @@ calling ``make lambda``
 Resulting deployment package is located at
 
 ``dist/lambda/lambda.zip``
+
+
+Configure lambda function
+=========================
+
+Handler name
+
+``curator_serverless.handler``
+
+
+Runtime
+
+``Python 3.6``
+
+
+Configure curator
+------------------
+
+Curator configuration can be bundled in the deployment package or downloaded
+when the function is triggered from url. Configuration can be provided as
+environmental variables or as part of event or mix.
+
+Environmental variables
+~~~~~~~~~~~~~~~~~~~~~~~
+
+:CONFIG_FILE: Path to local, bundled file or url to `curator's configuration file <https://www.elastic.co/guide/en/elasticsearch/client/curator/current/configfile.html>`_
+
+:ACTION_FILE: Path to local, bundled file or url to `curator's action file <https://www.elastic.co/guide/en/elasticsearch/client/curator/current/actionfile.html>`_
+
+
+Event structure
+---------------
+
+.. code-block:: json
+
+   {
+     "CONFIG_FILE": "https://s3-eu-west-1.amazonaws.com/curator-configs/config.yml",
+     "ACTION_FILE": "https://s3-eu-west-1.amazonaws.com/curator-configs/action.yml"
+   }
+
+
+Testing locally
+===============
+
+With python3.6 (`virtual <https://virtualenv.pypa.io/en/stable/installation/>`_) environemnt, install the code.
+
+Clone this repository and change directory to it
+
+.. code-block:: bash
+
+   $ git clone https://github.com/beezz/elasticsearch-curator-serverless.git
+   $ cd elasticsearch-curator-serverless
+   $ pip install --editable .
+
+
+Run locally and pass event json via stdin. Example with mixing event and environment configuration.
+
+.. code-block:: json
+
+   $ echo '{"ACTION_FILE": "http://localhost:8000/delete.yml"}' | CONFIG_FILE=configs/config.yml python -m curator_serverless.__init__
