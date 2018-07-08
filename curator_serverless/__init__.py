@@ -10,7 +10,7 @@ import collections
 import requests
 from requests.exceptions import RequestException
 
-import curator.cli
+from curator.cli import run as run_curator
 
 
 Config = collections.namedtuple('Config', ['CONFIG_FILE', 'ACTION_FILE'])
@@ -79,6 +79,9 @@ def local_or_remote_file(config_entry, config_value, run_config):
             "%s: `%s` downloaded and saved.",
             config_entry, config_value)
     else:
+        logger.info(
+            "Using local file %s: `%s`.",
+            config_entry, config_value)
         run_config = run_config._replace(**{config_entry: config_value})
     return run_config
 
@@ -110,7 +113,7 @@ def handler(event, context):
     """
     logger.info("Initializing curator's configuration.")
     config = configure(event, os.environ)
-    curator.cli.run(config.CONFIG_FILE, config.ACTION_FILE)
+    run_curator(config.CONFIG_FILE, config.ACTION_FILE)
 
 
 if __name__ == "__main__":
