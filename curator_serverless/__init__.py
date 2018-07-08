@@ -66,7 +66,7 @@ def download_file(url, path, timeout=5):
         shutil.copyfileobj(file_response.raw, path_file)
 
 
-def handler():
+def handler(event, context):
     logger.info("Initializing curator's configuration.")
     env_config = configure_from_env()
     logger.info("Getting CONFIG_FILE: `%s`", env_config.CONFIG_FILE)
