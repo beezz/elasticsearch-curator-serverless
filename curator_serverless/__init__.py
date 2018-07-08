@@ -8,18 +8,15 @@ import logging
 import collections
 
 import requests
-
-from curator.cli import run as run_curator
 from requests.exceptions import RequestException
 
+from curator.cli import run as run_curator
+
+
 Config = collections.namedtuple('Config', ['CONFIG_FILE', 'ACTION_FILE'])
-# Downloaded configuration will reside at those locations
-run_config = Config(
-    CONFIG_FILE=os.path.join('/tmp', 'config.yml'),
-    ACTION_FILE=os.path.join('/tmp', 'action.yml'),
-)
 
 
+# pylint: disable=invalid-name
 logger = logging.getLogger()
 
 
@@ -35,18 +32,19 @@ class ConfigDownloadError(CuratorException):
     """Raised when configuration download gone awry"""
 
 
-def configure_from_env():
+def resolve_config_entry(config_entry, event, env):
     """
-    Create configuration object from environment variables.
-    If any of configuration keys is missing, raises `ConfigMissingError`.
+    Resolve configuration field from event or environment.
     """
-    config_kwargs = {}
-    for config_entry in Config._fields:
-        if not os.getenv(config_entry):
-            raise ConfigMissingError(
-                f"Missing configuration env variable {config_entry}")
-        config_kwargs[config_entry] = os.getenv(config_entry)
-    return Config(**config_kwargs)
+    return event.get(config_entry, env.get(config_entry))
+
+
+def is_url(config_file):
+    """
+    Returns true if 'config_file` starts with `http` which indicates that it's
+    an url.
+    """
+    return config_file.startswith('http')
 
 
 def download_file(url, path, timeout=5):
@@ -58,7 +56,7 @@ def download_file(url, path, timeout=5):
     except RequestException as rexc:
         raise ConfigDownloadError(
             f"Failed to download `{url}`: {rexc}") from None
-    if file_response.status_code != requests.codes.ok:
+    if file_response.status_code != requests.codes.ok: # pylint: disable=no-member
         raise ConfigDownloadError(
             f"Failed to download `{url}`: {file_response.status_code}")
     with open(path, 'wb') as path_file:
@@ -66,17 +64,53 @@ def download_file(url, path, timeout=5):
         shutil.copyfileobj(file_response.raw, path_file)
 
 
+def local_or_remote_file(config_entry, config_value, run_config):
+    """
+    Use local file or download one from given url
+
+    Returns updated ``run_config``
+    """
+    if is_url(config_value):
+        download_file(
+            url=config_value,
+            path=getattr(run_config, config_entry)
+        )
+        logger.info(
+            "%s: `%s` downloaded and saved.",
+            config_entry, config_value)
+    else:
+        run_config = run_config._replace(**{config_entry: config_value})
+    return run_config
+
+
+def configure(event, env, run_config=None):
+    """
+    Create configuration object from environment variables.
+    If any of configuration keys is missing, raises `ConfigMissingError`.
+    """
+    if run_config is None:
+        run_config = Config(
+            CONFIG_FILE=os.path.join('/tmp', 'config.yml'),
+            ACTION_FILE=os.path.join('/tmp', 'action.yml'),
+        )
+    for config_entry in Config._fields:
+        config_value = resolve_config_entry(config_entry, event, env)
+        if not config_value:
+            raise ConfigMissingError(
+                f"Missing configuration env variable {config_entry}")
+        run_config = local_or_remote_file(
+            config_entry, config_value, run_config)
+    return run_config
+
+
+# pylint: disable=unused-argument
 def handler(event, context):
+    """
+    Curator serverless handler
+    """
     logger.info("Initializing curator's configuration.")
-    env_config = configure_from_env()
-    logger.info("Getting CONFIG_FILE: `%s`", env_config.CONFIG_FILE)
-    download_file(env_config.CONFIG_FILE, run_config.CONFIG_FILE)
-    logger.info(
-        "CONFIG_FILE: `%s` downloaded and saved.", env_config.CONFIG_FILE)
-    logger.info("Getting ACTION_FILE: %s", env_config.ACTION_FILE)
-    download_file(env_config.ACTION_FILE, run_config.ACTION_FILE)
-    logger.info("ACTION_FILE: `%s` downloaded and saved.", env_config.ACTION_FILE)
-    run_curator(run_config.CONFIG_FILE, run_config.ACTION_FILE)
+    config = configure(event, os.environ)
+    run_curator(config.CONFIG_FILE, config.ACTION_FILE)
 
 
 if __name__ == "__main__":
@@ -84,4 +118,4 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="[%(levelname)s][%(asctime)s.%(msecs)dZ] %(message)s",
     )
-    handler()
+    handler(None, None)
