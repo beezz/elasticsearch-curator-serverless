@@ -10,7 +10,7 @@ import collections
 import requests
 from requests.exceptions import RequestException
 
-from curator.cli import run as run_curator
+import curator.cli
 
 
 Config = collections.namedtuple('Config', ['CONFIG_FILE', 'ACTION_FILE'])
@@ -110,7 +110,7 @@ def handler(event, context):
     """
     logger.info("Initializing curator's configuration.")
     config = configure(event, os.environ)
-    run_curator(config.CONFIG_FILE, config.ACTION_FILE)
+    curator.cli.run(config.CONFIG_FILE, config.ACTION_FILE)
 
 
 if __name__ == "__main__":
@@ -118,4 +118,4 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="[%(levelname)s][%(asctime)s.%(msecs)dZ] %(message)s",
     )
-    handler(None, None)
+    handler(__import__('json').loads(__import__('sys').stdin.read()), None)
