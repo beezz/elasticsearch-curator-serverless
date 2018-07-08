@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Elasticsearch curator as serverless handler.
+Resources:
+  Curator:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: curator_serverless.handler
+      Runtime: python3.6
+      CodeUri: ./dist/lambda
+      Description: elasticsearch-curator serverless.
+      MemorySize: 256
+      Timeout: 120
+      Environment:
+        Variables:
+          CONFIG_FILE:
+          ACTION_FILE:
