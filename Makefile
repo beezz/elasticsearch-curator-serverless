@@ -34,14 +34,14 @@ publish: build
 clean-lambda:
 	@find dist/lambda -type d -name "__pycache__" -exec rm -r {} +
 
-.PHONY: build-lambda
-build-lambda:
+.PHONY: install-lambda
+install-lambda:
 	@mkdir -p dist/lambda
 	@pip install --target dist/lambda --upgrade .
 
 .PHONY: copy-configs
 copy-configs:
-	@test -n "${CONFIGS}" && cp -r ${CONFIGS} dist/lambda/
+	@test -n "${CONFIGS}" && cp -r ${CONFIGS} dist/lambda/ || true
 
 .PHONY: bundle-lambda
 bundle-lambda:
@@ -52,4 +52,4 @@ checkpython:
 	@python --version | grep $(PYVERSION)
 
 .PHONY: lambda
-lambda: checkpython clean build-lambda clean-lambda copy-configs bundle-lambda
+lambda: checkpython clean install-lambda clean-lambda copy-configs bundle-lambda
