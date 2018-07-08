@@ -1,4 +1,6 @@
+PYVERSION ?= 3.6
 VERSION_PART ?= patch
+CONFIGS ?=
 
 .PHONY: clean
 clean:
@@ -28,7 +30,26 @@ testpublish: build
 publish: build
 	twine upload dist/*
 
+.PHONY: clean-lambda
+clean-lambda:
+	@find dist/lambda -type d -name "__pycache__" -exec rm -r {} +
+
 .PHONY: build-lambda
 build-lambda:
 	@mkdir -p dist/lambda
 	@pip install --target dist/lambda --upgrade .
+
+.PHONY: copy-configs
+copy-configs:
+	test -n "${CONFIGS}" && cp -r ${CONFIGS} dist/lambda/
+
+.PHONY: bundle-lambda
+bundle-lambda:
+	@cd dist/lambda && zip -r lambda.zip *
+
+.PHONY: checkpython
+checkpython:
+	@python --version | grep $(PYVERSION)
+
+.PHONY: lambda
+lambda: checkpython clean build-lambda clean-lambda copy-configs bundle-lambda
